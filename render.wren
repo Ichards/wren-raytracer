@@ -4,10 +4,9 @@ import "Ray" for Ray, pointAtPar, colorizeNormal
 import "Marble" for Marble
 import "Random" for Random
 import "Output" for Output
-import "Material" for Material, lambertianScatter, metalScatter, reflect
+import "Material" for Material, lambertianScatter, metalScatter, reflect, refract, dielectricScatter, schlick
 
 System.print("PLEEEASE")
-
 
 var hit_record = {
     "t": 0,
@@ -65,15 +64,19 @@ var collideList = Fn.new { |p_ray, p_tmin, p_tmax, p_marbleList|
 
 var rayColor = Fn.new{ |p_ray, p_marbleList|
     var c_ray = p_ray
+
+    var materialCall = [true, 0]
+
     var bounce = 0
     var albedoList = []
     while (collideList.call(c_ray, 0.001, Num.largest, p_marbleList)) {
         bounce = bounce + 1 //GOTTA limit bounces
-        if (bounce > 10) {
+        if (bounce > 10 || !materialCall[0]) {
             return [0, 0, 0]
         }
         albedoList.add(hit_record["material"][1])
-        c_ray = hit_record["material"][0].call(c_ray, hit_record["point"], hit_record["normal"], hit_record["material"])[1]
+        materialCall = hit_record["material"][0].call(c_ray, hit_record["point"], hit_record["normal"], hit_record["material"])
+        c_ray = materialCall[1]
     }
 
     var endColor = colorizeNormal.call(c_ray.direction)
@@ -87,7 +90,7 @@ var rayColor = Fn.new{ |p_ray, p_marbleList|
 
 
 //set up image
-var imageName = "render.ppm"
+var imageName = "render1.ppm"
 System.print("WRITING TO " + imageName)
 File.open(imageName)
 var width = 200
@@ -101,13 +104,14 @@ var horizontal = [4, 0, 0]
 var top = [0, 2, 0]
 var cameraOrigin = [0, 0, 0]
 
-var marbleList = [Marble.new([0, 0, -1], 0.5, Material.new(lambertianScatter, [0.5, 0.5, 0.5], [])), Marble.new([0, -100.5, -1], 100, Material.new(lambertianScatter, [0.5, 0.5, 0.5], [])),
-Marble.new([1, 0, -1], 0.5, Material.new(metalScatter, [0.8, 0.6, 0.2], [0.35])), Marble.new([-1, 0, -1], 0.5, Material.new(metalScatter, [0.8, 0.8, 0.8], [0])) ]
-//                                                                  ^                       ^^                                                                              ^                       ^^
+var marbleList = [Marble.new([0, 0, -1], 0.5, Material.new(lambertianScatter, [0.1, 0.2, 0.5], [])), 
+Marble.new([0, -100.5, -1], 100, Material.new(lambertianScatter, [0.8, 0.8, 0], [])),
+Marble.new([1, 0, -1], 0.5, Material.new(metalScatter, [0.8, 0.6, 0.2], [0])), 
+Marble.new([-1, 0, -1], 0.5, Material.new(dielectricScatter, [1, 1, 1], [1.5])), ]
 
 File.openAppend(imageName)
 
-var asCount = 1
+var asCount = 5
 
 //EXPERIMENTAL, MAKING PROGRESS BAR
 
