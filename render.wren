@@ -5,6 +5,7 @@ import "Marble" for Marble
 import "Random" for Random
 import "Output" for Output
 import "Material" for Material, lambertianScatter, metalScatter, reflect, refract, dielectricScatter, schlick
+import "Camera" for Camera, get_ray
 
 System.print("PLEEEASE")
 
@@ -99,15 +100,19 @@ var maxColorValue = 255 //takes one byte, but wren only uses 16-bit doubles i th
 File.write("P3\n%(width) %(height)\n%(maxColorValue)\n")
 File.close()
 
+/*
 var lower_left_corner = [-2, -1, -1]
 var horizontal = [4, 0, 0]
 var top = [0, 2, 0]
 var cameraOrigin = [0, 0, 0]
+*/
 
-var marbleList = [Marble.new([0, 0, -1], 0.5, Material.new(lambertianScatter, [0.1, 0.2, 0.5], [])), 
-Marble.new([0, -100.5, -1], 100, Material.new(lambertianScatter, [0.8, 0.8, 0], [])),
-Marble.new([1, 0, -1], 0.5, Material.new(metalScatter, [0.8, 0.6, 0.2], [0])), 
-Marble.new([-1, 0, -1], 0.5, Material.new(dielectricScatter, [1, 1, 1], [1.5])), ]
+var cam = Camera.new(90, width / height)
+
+var radius = (Num.pi / 4).cos
+
+var marbleList = [Marble.new([-radius, 0, -1], radius, Material.new(lambertianScatter, [0, 0, 1], [])), 
+Marble.new([radius, 0, -1], radius, Material.new(lambertianScatter, [1, 0, 0], [])), ]
 
 File.openAppend(imageName)
 
@@ -137,7 +142,8 @@ for (y in height-1..0) { //99-0
         for (currentAs in 0...asCount) {
             var yStrength = (y + (Random.randomLTO() - 1)) / (height-1)
             var xStrength = (x + (Random.randomLTO() - 1)) / (width-1)
-            var ray = Ray.new(cameraOrigin, vec3.add([lower_left_corner, vec3.multiply(horizontal, xStrength), vec3.multiply(top, yStrength)]))
+            //var ray = Ray.new(cameraOrigin, vec3.add([lower_left_corner, vec3.multiply(horizontal, xStrength), vec3.multiply(top, yStrength)]))
+            var ray = get_ray.call(xStrength, yStrength, cam)
             color = vec3.add(color, rayColor.call(ray, marbleList))
             progressCount = progressCount + 1
         }
