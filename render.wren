@@ -5,7 +5,7 @@ import "Marble" for Marble
 import "Random" for Random
 import "Output" for Output
 import "Material" for Material, lambertianScatter, metalScatter, reflect, refract, dielectricScatter, schlick
-import "Camera" for Camera, get_ray
+import "Camera" for Camera, get_ray, initCamera
 
 System.print("PLEEEASE")
 
@@ -91,7 +91,7 @@ var rayColor = Fn.new{ |p_ray, p_marbleList|
 
 
 //set up image
-var imageName = "render1.ppm"
+var imageName = "render.ppm"
 System.print("WRITING TO " + imageName)
 File.open(imageName)
 var width = 200
@@ -100,19 +100,18 @@ var maxColorValue = 255 //takes one byte, but wren only uses 16-bit doubles i th
 File.write("P3\n%(width) %(height)\n%(maxColorValue)\n")
 File.close()
 
-/*
-var lower_left_corner = [-2, -1, -1]
-var horizontal = [4, 0, 0]
-var top = [0, 2, 0]
-var cameraOrigin = [0, 0, 0]
-*/
 
-var cam = Camera.new(90, width / height)
 
-var radius = (Num.pi / 4).cos
+var cam = Camera.new([-2, 2, 1], [0, 0, -1], [0, 1, 0], 30, width / height)
 
-var marbleList = [Marble.new([-radius, 0, -1], radius, Material.new(lambertianScatter, [0, 0, 1], [])), 
-Marble.new([radius, 0, -1], radius, Material.new(lambertianScatter, [1, 0, 0], [])), ]
+initCamera.call(cam)
+
+
+var marbleList = [Marble.new([0, 0, -1], 0.5, Material.new(lambertianScatter, [0.1, 0.2, 0.5], [])), 
+Marble.new([0, -100.5, -1], 100, Material.new(lambertianScatter, [0.8, 0.8, 0], [])),
+Marble.new([1, 0, -1], 0.5, Material.new(metalScatter, [0.8, 0.6, 0.2], [0])),
+Marble.new([-1, 0, -1], 0.5, Material.new(dielectricScatter, [1, 1, 1], [1.5])),
+Marble.new([-1, 0, -1], -0.45, Material.new(dielectricScatter, [1, 1, 1], [1.5])) ]
 
 File.openAppend(imageName)
 
