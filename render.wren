@@ -5,9 +5,10 @@ import "Marble" for Marble
 import "Random" for Random
 import "Output" for Output
 import "Material" for Material, lambertianScatter, metalScatter, reflect, refract, dielectricScatter, schlick
-import "Camera" for Camera, get_ray, initCamera
+import "Camera" for Camera, get_ray, initCamera, random_in_unit_disk
 
-System.print("PLEEEASE")
+System.print("Odds of this program working are %(Random.randomLTO() * 10) out of 10")
+
 
 var hit_record = {
     "t": 0,
@@ -15,7 +16,6 @@ var hit_record = {
     "normal": [0, 0, 0],
     "material": Fn.new{ System.print("no material") },
 }
-
 
 var collide = Fn.new { |p_ray, p_tmin, p_tmax, p_marble| //see if a ray collides with the marble. put point of intersection into outside struct, return bool
     var a = ((p_ray.direction[0] * p_ray.direction[0]) + (p_ray.direction[1] * p_ray.direction[1]) + (p_ray.direction[2] * p_ray.direction[2]))
@@ -91,7 +91,7 @@ var rayColor = Fn.new{ |p_ray, p_marbleList|
 
 
 //set up image
-var imageName = "render.ppm"
+var imageName = "render1.ppm"
 System.print("WRITING TO " + imageName)
 File.open(imageName)
 var width = 200
@@ -100,9 +100,12 @@ var maxColorValue = 255 //takes one byte, but wren only uses 16-bit doubles i th
 File.write("P3\n%(width) %(height)\n%(maxColorValue)\n")
 File.close()
 
+var lookFrom = [3, 3, 2]
+var lookAt = [0, 0, -1]
+var dist_to_focus = vec3.length(vec3.subtract(lookFrom, lookAt))
+var aperture = 2
 
-
-var cam = Camera.new([-2, 2, 1], [0, 0, -1], [0, 1, 0], 30, width / height)
+var cam = Camera.new(lookFrom, lookAt, [0, 1, 0], 20, width / height, aperture, dist_to_focus)
 
 initCamera.call(cam)
 
