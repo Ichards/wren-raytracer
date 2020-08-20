@@ -7,8 +7,6 @@ import "Output" for Output
 import "Material" for Material, lambertianScatter, metalScatter, reflect, refract, dielectricScatter, schlick
 import "Camera" for Camera, get_ray, initCamera, random_in_unit_disk
 
-System.print("Odds of this program working are %(Random.randomLTO() * 10) out of 10")
-
 
 var hit_record = {
     "t": 0,
@@ -90,31 +88,51 @@ var rayColor = Fn.new{ |p_ray, p_marbleList|
 }
 
 
+var randomWorld = Fn.new{|p_worldList|
+    for (i in -3..3) {
+        for (j in -3..3) {
+            var chooseMat = Random.randomLTO()
+            var center = [i+0.9*Random.randomLTO(),0.2, j+0.9*Random.randomLTO()]
+            if (vec3.length(vec3.subtract(center, [4, 0.2, 0])) > 0.9) {
+                if (chooseMat < 0.7) { //lambertian
+                    p_worldList.add(Marble.new(center, 0.2, Material.new(lambertianScatter, [Random.randomLTO().pow(2), Random.randomLTO().pow(2), Random.randomLTO().pow(2)], [])))
+                } else if (chooseMat < 0.9) { //metal
+                    p_worldList.add(Marble.new(center, 0.2, Material.new(metalScatter, [0.5 * (1 + Random.randomLTO()), 0.5 * (1 + Random.randomLTO()), 0.5 * (1 + Random.randomLTO())], [0.5 * Random.randomLTO()])))
+                } else { //glass
+                    p_worldList.add(Marble.new(center, 0.2, Material.new(metalScatter, [1, 1, 1], [1.5])))
+                }
+            }
+        }
+    }
+}
+
+
 //set up image
-var imageName = "render1.ppm"
+var imageName = "ULTIMATERENDER.ppm"
 System.print("WRITING TO " + imageName)
 File.open(imageName)
-var width = 200
-var height = 100
+var width = 1200
+var height = 800
 var maxColorValue = 255 //takes one byte, but wren only uses 16-bit doubles i think, lmao
 File.write("P3\n%(width) %(height)\n%(maxColorValue)\n")
 File.close()
 
-var lookFrom = [3, 3, 2]
-var lookAt = [0, 0, -1]
+var lookFrom = [13, 2, 3]
+var lookAt = [0, 0, 0]
 var dist_to_focus = vec3.length(vec3.subtract(lookFrom, lookAt))
-var aperture = 2
+var aperture = 0.1
 
 var cam = Camera.new(lookFrom, lookAt, [0, 1, 0], 20, width / height, aperture, dist_to_focus)
 
 initCamera.call(cam)
 
 
-var marbleList = [Marble.new([0, 0, -1], 0.5, Material.new(lambertianScatter, [0.1, 0.2, 0.5], [])), 
-Marble.new([0, -100.5, -1], 100, Material.new(lambertianScatter, [0.8, 0.8, 0], [])),
-Marble.new([1, 0, -1], 0.5, Material.new(metalScatter, [0.8, 0.6, 0.2], [0])),
-Marble.new([-1, 0, -1], 0.5, Material.new(dielectricScatter, [1, 1, 1], [1.5])),
-Marble.new([-1, 0, -1], -0.45, Material.new(dielectricScatter, [1, 1, 1], [1.5])) ]
+var marbleList = [Marble.new([0, 1, 0], 1, Material.new(dielectricScatter, [1, 1, 1], [1.5])), 
+Marble.new([0, -1000, -1], 1000, Material.new(lambertianScatter, [0.5, 0.5, 0.5], [])), //i'm putting the world sphere here xD
+Marble.new([4, 1, 0], 1, Material.new(metalScatter, [0.7, 0.6, 0.5], [0])),
+Marble.new([-4, 1, 0], 1, Material.new(lambertianScatter, [0.4, 0.2, 0.1], [])), ]
+
+randomWorld.call(marbleList)
 
 File.openAppend(imageName)
 
@@ -135,7 +153,6 @@ var progressString = ""
 System.print("Progress")
 
 //EXPERIMANTAL OVER
-
 
 //I'll make the image left to right, top to bottom to follow the guide
 for (y in height-1..0) { //99-0

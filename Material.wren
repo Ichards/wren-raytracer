@@ -22,30 +22,27 @@ var reflect = Fn.new { |r_direction, v_normal|
     return vec3.subtract(r_direction,vec3.multiply([2, vec3.dot(r_direction, v_normal), v_normal]))
 }
 
-var refract = Fn.new { |p_ray, p_normal, p_ni_over_nt|
+var refract = Fn.new { |p_ray, p_normal, p_ni_over_nt| //p_ray isn't actually a ray..... it's a vec3
     var unitRay = vec3.unitVector(p_ray)
     var dt = vec3.dot(unitRay, p_normal)
-    var discriminant = 1 - (p_ni_over_nt * p_ni_over_nt * (1-dt*dt))
+    var discriminant = 1 - p_ni_over_nt * p_ni_over_nt * (1-dt*dt)
     if (discriminant > 0) {
         //in the original source code, the result is put into a referenced parameter, but wren can't do that :D
-
 
         var a = vec3.multiply((vec3.subtract(unitRay, vec3.multiply(p_normal,dt))), p_ni_over_nt)
         var b = p_normal
         var c = discriminant.sqrt
         var c2 = vec3.multiply(p_normal, discriminant.sqrt)
 
-        //var refracted = vec3.multiply((vec3.subtract(unitRay, vec3.multiply(p_normal,dt))), p_ni_over_nt) - p_normal*discriminant.sqrt
+        var refracted = vec3.subtract(vec3.multiply((vec3.subtract(unitRay, vec3.multiply(p_normal,dt))), p_ni_over_nt), vec3.multiply(p_normal, discriminant.sqrt))
 
         var refracted2 = vec3.subtract(a,c2)
 
         
-        return [true, refracted2]
+        return [true, refracted]
     } else {
         return [false, 0]
     }
-
-    //return "pee"
 
 }
 
@@ -88,6 +85,13 @@ var dielectricScatter = Fn.new { |p_ray, p_interPoint, p_pointNormal, p_material
         cosine = -vec3.dot(p_ray.direction, p_pointNormal) / vec3.length(p_ray.direction)
     }
     var refractResult = refract.call(p_ray.direction, outward_normal, ni_over_nt)
+
+    var b_icky = false
+
+    if (refractResult[0]) {
+        b_icky = true
+    }
+
     if (refractResult[0]) {
         //scatterRay = Ray.new(p_interPoint, refractResult[1])
         reflect_prob = schlick.call(cosine, p_material[2][0])
